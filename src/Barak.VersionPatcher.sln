@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Barak.VersionPatcher.Cmd", "Barak.VersionPatcher.Cmd\Barak.VersionPatcher.Cmd.csproj", "{5AEF3E93-7E06-438A-BA6C-EF936832ADAC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Barak.VersionPatcher.Engine", "Barak.VersionPatcher.Engine\Barak.VersionPatcher.Engine.csproj", "{3313CA3A-2312-43F5-B31F-A90FC293EB5C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Barak.VersionPatcher.TFS", "Barak.VersionPatcher.TFS\Barak.VersionPatcher.TFS.csproj", "{821D043E-BE87-4EC6-B42E-283610363B69}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5AEF3E93-7E06-438A-BA6C-EF936832ADAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5AEF3E93-7E06-438A-BA6C-EF936832ADAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5AEF3E93-7E06-438A-BA6C-EF936832ADAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5AEF3E93-7E06-438A-BA6C-EF936832ADAC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3313CA3A-2312-43F5-B31F-A90FC293EB5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3313CA3A-2312-43F5-B31F-A90FC293EB5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3313CA3A-2312-43F5-B31F-A90FC293EB5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3313CA3A-2312-43F5-B31F-A90FC293EB5C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{821D043E-BE87-4EC6-B42E-283610363B69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{821D043E-BE87-4EC6-B42E-283610363B69}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{821D043E-BE87-4EC6-B42E-283610363B69}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{821D043E-BE87-4EC6-B42E-283610363B69}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -45,7 +45,7 @@ namespace Barak.VersionPatcher.Cmd
                             [Description("what part of the version to incress")]
                             [DefaultValue(VersionPart.Build)]
                             VersionPart versionPart,
-                            [Description("path to the project(.csproj) file, leave empty to search the folder for all solutions")]
+                            [Description("path to the project(.csproj) file, leave empty to search the folder for all projects")]
                             [DefaultValue(null)]
                             string[] projectFiles)
         {

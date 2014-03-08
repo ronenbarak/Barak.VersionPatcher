@@ -25,14 +25,16 @@ namespace Barak.VersionPatcher.TFS
 
         private bool m_disposed = false;
         private Lazy<Workspace> m_workspace;
-        private VersionSpec m_lastChangeset;
-
+        
+        private bool m_shouldUndo = true;
+        
         public TfsSourceControl(string sourceControlRootPath, string fileSystemPath)
         {
             m_fileSystemPath = fileSystemPath;
             m_sourceControlRootPath = sourceControlRootPath;
             m_workspace = new Lazy<Workspace>(() =>
                                               {
+                                                  m_shouldUndo = true;
                                                   Workspace workspace = m_versionControlServer.TryGetWorkspace(m_fileSystemPath);
 
                                                   
@@ -63,21 +65,6 @@ namespace Barak.VersionPatcher.TFS
         {
             if (m_pendingChanges.Count != 0)
             {
-                var versionControlFile = Path.Combine(m_fileSystemPath, VersionPathcerConsts.VersionControlFile);
-                if (System.IO.File.Exists(versionControlFile))
-                {
-                    Checkout(versionControlFile);
-                    System.IO.File.WriteAllText(versionControlFile,
-                        string.Format("{0}{1}{2}", DateTime.Now, Environment.NewLine, string.Join(Environment.NewLine, m_pendingChanges)));
-                }
-                else
-                {
-                    System.IO.File.WriteAllText(versionControlFile,
-                        string.Format("{0}{1}{2}", DateTime.Now, Environment.NewLine, string.Join(Environment.NewLine, m_pendingChanges)));
-                    m_workspace.Value.PendAdd(versionControlFile);
-                    m_pendingChanges.Add(versionControlFile);
-                }
-
                 var filesToCheckin = m_workspace.Value.GetPendingChanges(m_pendingChanges.ToArray());
                 try
                 {
@@ -94,6 +81,24 @@ namespace Barak.VersionPatcher.TFS
                     }
                     throw;
                 }
+            }
+        }
+
+        public void Complete()
+        {
+            m_shouldUndo = false;
+        }
+
+        public void Rollback()
+        {
+            if (m_removeMapping || (m_shouldUndo && m_pendingChanges.Count != 0))
+            {
+                m_workspace.Value.Undo(m_pendingChanges.ToArray());
+            }
+
+            if (m_removeMapping)
+            {
+                m_workspace.Value.Delete();
             }
         }
 
@@ -138,18 +143,52 @@ namespace Barak.VersionPatcher.TFS
             }
         }
 
+        public IRevisionVersion GetRevisionById(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return new TFSRevisionVersion(VersionSpec.Latest);   
+            }
+            else
+            {
+                return new TFSRevisionVersion(new ChangesetVersionSpec(id));   
+            }
+        }
 
+        public IRevisionVersion GetRevisionOfItem(IRevisionVersion maxRevisionVersion, string path)
+        {
+            try
+            {
+                var item = m_versionControlServer.GetItem(
+                    System.IO.Path.Combine(m_sourceControlRootPath, path),
+                    maxRevisionVersion.GetSpec(),
+                    DeletedState.NonDeleted, GetItemsOptions.None);
+
+                return new TFSRevisionVersion(new ChangesetVersionSpec(item.ChangesetId));
+            }
+            catch (Exception e)
+            {
+                return new TFSRevisionVersion(new DateVersionSpec(new DateTime(1973, 1, 1))); ; // The begining of time;
+            }
+        }
 
         public void Checkout(string path)
         {
+            m_shouldUndo = true;
             int count = m_workspace.Value.PendEdit(path);
             if (count == 0)
             {
                 var relativePath = path.Substring(m_fileSystemPath.Length);
                 var sourceControlFilePath = m_sourceControlRootPath + "/" + relativePath.Replace(@"\", "/");
-                m_workspace.Value.Get(new[] { sourceControlFilePath }, m_lastChangeset, RecursionType.None, GetOptions.GetAll | GetOptions.Overwrite);
-
-                count = m_workspace.Value.PendEdit(path);
+                var getStatus = m_workspace.Value.Get(new[] { sourceControlFilePath }, VersionSpec.Latest, RecursionType.None, GetOptions.GetAll | GetOptions.Overwrite);
+                if (getStatus.NumUpdated == 0)
+                {
+                    count = m_workspace.Value.PendAdd(path);   
+                }
+                else
+                {
+                    count = m_workspace.Value.PendEdit(path);   
+                }
                 if (count == 0)
                 {
                     throw new Exception(string.Format("Unable to edit file {0}", path));
@@ -158,47 +197,25 @@ namespace Barak.VersionPatcher.TFS
             m_pendingChanges.Add(path);
         }
 
-        public IEnumerable<IRevision> GetRevisionsUpTo(string id)
+        public IEnumerable<IRevision> GetRevisions(IRevisionVersion sourceRevision, IRevisionVersion targetRevision)
         {
-            if (string.IsNullOrEmpty(id))
-            {
-
-                m_lastChangeset = LatestVersionSpec.Instance;
-            }
-            else
-            {
-                m_lastChangeset = new ChangesetVersionSpec(int.Parse(id));   
-            }
-
-            VersionSpec sourceVersionSpec = null;
-
-            int? sourceChangeSetId = null;  
-            try
-            {
-                var item = m_versionControlServer.GetItem(
-                    System.IO.Path.Combine(m_sourceControlRootPath, VersionPathcerConsts.VersionControlFile),
-                    m_lastChangeset,
-                    DeletedState.NonDeleted, GetItemsOptions.None);
-
-                sourceVersionSpec = new ChangesetVersionSpec(item.ChangesetId);
-                sourceChangeSetId = item.ChangesetId;
-            }
-            catch (Exception e)
-            {
-                sourceVersionSpec = new DateVersionSpec(new DateTime(1973, 1, 1)); // The begining of time;
-            }
-
             System.Collections.IEnumerable changesets = m_versionControlServer.QueryHistory(
             m_sourceControlRootPath,
-            m_lastChangeset,
+            targetRevision.GetSpec(),
             0, 
             RecursionType.Full, 
             null,
-            sourceVersionSpec,
-            m_lastChangeset,
+            sourceRevision.GetSpec(),
+            targetRevision.GetSpec(),
             int.MaxValue,
             true, 
             false);
+
+            int? sourceChangeSetId = null;
+            if (sourceRevision.GetSpec() is ChangesetVersionSpec)
+            {
+                sourceChangeSetId = (sourceRevision.GetSpec() as ChangesetVersionSpec).ChangesetId;
+            }
 
             HashSet<string> items = new HashSet<string>();
             foreach (var changeset in changesets.OfType<Changeset>())
@@ -234,17 +251,11 @@ namespace Barak.VersionPatcher.TFS
             if (!m_disposed)
             {
                 m_disposed = true;
-                if (m_pendingChanges.Count != 0)
+                Rollback();
+                if (m_configurationServer != null)
                 {
-                    m_workspace.Value.Undo(m_pendingChanges.ToArray());
+                    m_configurationServer.Disconnect();
                 }
-
-                if (m_removeMapping)
-                {
-                    //m_workspace.Value.DeleteMapping(new WorkingFolder(m_sourceControlRootPath, m_fileSystemPath, WorkingFolderType.Map, RecursionType.Full));
-                    m_workspace.Value.Delete();
-                }
-                m_configurationServer.Disconnect();
             }
         }
     }

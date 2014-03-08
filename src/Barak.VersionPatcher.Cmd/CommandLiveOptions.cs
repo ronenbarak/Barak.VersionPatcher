@@ -39,6 +39,9 @@ namespace Barak.VersionPatcher.Cmd
                             [Description("recursivly change projects depends on updated projects")]
                             [DefaultValue(true)]
                             bool recursive,
+                            [Description("commit changes when done")]
+                            [DefaultValue(true)]
+                            bool commit,
                             [Description("what part of the version to incress")]
                             [DefaultValue(VersionPart.Build)]
                             VersionPart versionPart,
@@ -55,6 +58,7 @@ namespace Barak.VersionPatcher.Cmd
                             ProjectFiles = projectFiles,
                             SourceControlUrl = new Uri(vcUrl),
                             VersionControlPath = vcPath,
+                            Commit = commit,
                             Recursive = recursive,
                             VersionPart = versionPart,
                         };

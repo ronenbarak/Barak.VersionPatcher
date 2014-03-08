@@ -27,32 +27,19 @@ namespace Barak.VersionPatcher.Engine
         {
             m_sourceControlProvider = sourceControlProvider;
         }
-
-        private static void AddChangedProjects(Dictionary<CSProject, List<CSProject>> projectToDependents, CSProject changeProject, HashSet<CSProject> changeProjects)
-        {
-            List<CSProject> dependentProject;
-            if (projectToDependents.TryGetValue(changeProject, out dependentProject))
-            {
-                foreach (var csProject in dependentProject)
-                {
-                    if (changeProjects.Add(csProject))
-                    {
-                        AddChangedProjects(projectToDependents, csProject, changeProjects);
-                    }
-                }
-            }
-        }
-
+        
         public void Patch(PatchInfo patchInfo)
         {
             using (ISourceControl sourceControl = GetSourceControl(patchInfo))
             {
-                IEnumerable<IRevision> revisions = sourceControl.GetRevisionsUpTo(patchInfo.Revision);
+                var maxRevision = sourceControl.GetRevisionById(patchInfo.Revision);
+                var minRevision = sourceControl.GetRevisionOfItem(maxRevision, System.IO.Path.Combine(patchInfo.FileSystemPath, VersionPathcerConsts.VersionControlFile));
+                IEnumerable<IRevision> revisions = sourceControl.GetRevisions(minRevision, maxRevision);
                 var changeFiles = revisions.Select(p => new ChangeFiles()
-                                                        {
-                                                            FullPath =
-                                                                System.IO.Path.Combine(patchInfo.FileSystemPath, p.Item),
-                                                        }).ToDictionary(p => p.FullPath.ToUpper());
+                {
+                    FullPath =
+                        System.IO.Path.Combine(patchInfo.FileSystemPath, p.Item),
+                }).ToDictionary(p => p.FullPath.ToUpper());
 
                 if (revisions.Count() != 0)
                 {
@@ -67,14 +54,39 @@ namespace Barak.VersionPatcher.Engine
 
                     var fileToModify = GetAssemblyInfoFilesToUpdage(changeProjects);
 
-                    UpgradeAssemblyFiles(fileToModify, sourceControl, patchInfo.VersionPart);
+                    if (fileToModify.Any())
+                    {
+                        UpgradeAssemblyFiles(fileToModify, sourceControl, patchInfo);
 
-                    sourceControl.Commit(patchInfo.Comment);
+                        if (patchInfo.Commit)
+                        {
+                            sourceControl.Commit(patchInfo.Comment);
+                        }
+                        else
+                        {
+                            sourceControl.Complete();
+                        }
+                    }
                 }
             }
         }
 
-        private void UpgradeAssemblyFiles(IEnumerable<string> fileToModify,ISourceControl sourceControl,VersionPart versionPart)
+        private void AddChangedProjects(Dictionary<CSProject, List<CSProject>> projectToDependents, CSProject changeProject, HashSet<CSProject> changeProjects)
+        {
+            List<CSProject> dependentProject;
+            if (projectToDependents.TryGetValue(changeProject, out dependentProject))
+            {
+                foreach (var csProject in dependentProject)
+                {
+                    if (changeProjects.Add(csProject))
+                    {
+                        AddChangedProjects(projectToDependents, csProject, changeProjects);
+                    }
+                }
+            }
+        }
+
+        private void UpgradeAssemblyFiles(IEnumerable<string> fileToModify,ISourceControl sourceControl,PatchInfo patchInfo)
         {
             Regex regex = null;
             Regex regexFileVersion = null;
@@ -83,27 +95,42 @@ namespace Barak.VersionPatcher.Engine
                 regex = new Regex(@"assembly: AssemblyVersion\(""(\d+)\.(\d+)\.(\d+)\.(\d+)""\)",RegexOptions.Compiled);
                 regexFileVersion = new Regex(@"assembly: AssemblyFileVersion\(""(\d+)\.(\d+)\.(\d+)\.(\d+)""\)", RegexOptions.Compiled);        
             }
-            
+            List<string> filesModified = new List<string>();
             foreach (var fileAssemblySetting in fileToModify)
             {
                 var fileText = System.IO.File.ReadAllText(fileAssemblySetting);
                 string newFile = fileText;
                 var match = regex.Match(newFile);
                 bool isCheckout = false;
-                newFile = UpdateAssemblyFile(sourceControl, versionPart, match, fileAssemblySetting, newFile, ref isCheckout);
+                newFile = UpdateAssemblyFile(sourceControl, patchInfo.VersionPart, match, fileAssemblySetting, newFile, ref isCheckout);
                 match = regexFileVersion.Match(newFile);
-                newFile = UpdateAssemblyFile(sourceControl, versionPart, match, fileAssemblySetting, newFile, ref isCheckout);
+                newFile = UpdateAssemblyFile(sourceControl, patchInfo.VersionPart, match, fileAssemblySetting, newFile, ref isCheckout);
 
                 if (isCheckout)
                 {
+                    filesModified.Add(fileAssemblySetting);
                     System.IO.File.WriteAllText(fileAssemblySetting, newFile);
                 }
-
-
             }
+
+            var versionControlFile = Path.Combine(patchInfo.FileSystemPath, VersionPathcerConsts.VersionControlFile);
+            if (System.IO.File.Exists(versionControlFile))
+            {
+                sourceControl.Checkout(versionControlFile);
+                System.IO.File.WriteAllText(versionControlFile,
+                    string.Format("{0}{1}{2}", DateTime.Now, Environment.NewLine, string.Join(Environment.NewLine, filesModified)));
+            }
+            else
+            {
+                System.IO.File.WriteAllText(versionControlFile,
+                    string.Format("{0}{1}{2}", DateTime.Now, Environment.NewLine, string.Join(Environment.NewLine, filesModified)));
+                sourceControl.Checkout(versionControlFile);
+            }
+
+
         }
 
-        private static string UpdateAssemblyFile(ISourceControl sourceControl, VersionPart versionPart, Match match,
+        private string UpdateAssemblyFile(ISourceControl sourceControl, VersionPart versionPart, Match match,
             string fileAssemblySetting, string newFile, ref bool isCheckout)
         {
             if (match.Success)
@@ -124,22 +151,26 @@ namespace Barak.VersionPatcher.Engine
             return newFile;
         }
 
-        private static HashSet<string> GetAssemblyInfoFilesToUpdage(IEnumerable<CSProject> changeProjects)
+        private static IEnumerable<string> GetAssemblyInfoFilesToUpdage(IEnumerable<CSProject> changeProjects)
         {
-            HashSet<string> fileToModify = new HashSet<string>();
+            HashSet<string> fileToModify = new HashSet<string>();            
             foreach (var changeProject in changeProjects)
             {
                 File foundFile = changeProject.Files.FirstOrDefault(p => p.Path.ToUpper() == @"PROPERTIES\ASSEMBLYINFO.CS");
                 if (foundFile != null)
                 {
-                    fileToModify.Add(
-                        Path.GetFullPath(Path.Combine(Path.GetDirectoryName(changeProject.FullPath), foundFile.Path)).ToUpper());
+                    string fullPath =Path.GetFullPath(Path.Combine(Path.GetDirectoryName(changeProject.FullPath), foundFile.Path));
+                    if (System.IO.File.Exists(fullPath))
+                    {
+                        fileToModify.Add(fullPath.ToUpper());
+                    }
                 }
             }
+
             return fileToModify;
         }
 
-        private static void AddIndirectChangedProjects(List<CSProject> allProjects, HashSet<CSProject> changeProjects)
+        private void AddIndirectChangedProjects(List<CSProject> allProjects, HashSet<CSProject> changeProjects)
         {
             Dictionary<CSProject, List<CSProject>> projectToDependents = allProjects.ToDictionary(p => p,
                 project => new List<CSProject>());
@@ -171,7 +202,7 @@ namespace Barak.VersionPatcher.Engine
             }
         }
 
-        private static HashSet<CSProject> GetDirectlyChangedProjects(Dictionary<string, ChangeFiles> changeFiles)
+        private HashSet<CSProject> GetDirectlyChangedProjects(Dictionary<string, ChangeFiles> changeFiles)
         {
             HashSet<CSProject> changeProjects = new HashSet<CSProject>();
             foreach (var changeFilese in changeFiles.Values)
@@ -184,7 +215,7 @@ namespace Barak.VersionPatcher.Engine
             return changeProjects;
         }
 
-        private static List<CSProject> GetAllProjects(PatchInfo patchInfo, Dictionary<string, ChangeFiles> changeFiles)
+        private List<CSProject> GetAllProjects(PatchInfo patchInfo, Dictionary<string, ChangeFiles> changeFiles)
         {
             string[] projectPaths = null;
             if (patchInfo.ProjectFiles != null &&

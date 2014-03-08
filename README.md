@@ -47,6 +47,10 @@ The application checks for all the files that has been changed(using the source 
 it will find the project that referance this files and update those project assembly info files(hard coded /Properties/AssemblyInfo.cs).
 when recursive paramter is set to ture, the version of all project that depends on the change will be change as well.
 
+Licence
+====================
+We use the Apache License, Version 2.0
+
 Note:
 ====================
 We need help, use the application and report bugs(or better yet fix them).

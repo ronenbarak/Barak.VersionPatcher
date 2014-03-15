@@ -119,7 +119,7 @@ namespace Barak.VersionPatcher.TFS
             m_configurationServer = TfsConfigurationServerFactory.GetConfigurationServer(new Uri(tfsConnection));
             //m_configurationServer.Connect(ConnectOptions.IncludeServices);
 
-            CatalogNode configurationServerNode = m_configurationServer.CatalogNode;
+             CatalogNode configurationServerNode = m_configurationServer.CatalogNode;
 
             // Query the children of the configuration server node for all of the team project collection nodes
             ReadOnlyCollection<CatalogNode> tpcNodes = configurationServerNode.QueryChildren(

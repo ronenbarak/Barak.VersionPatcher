@@ -91,7 +91,7 @@ namespace Barak.VersionPatcher.TFS
 
         public void Rollback()
         {
-            if (m_removeMapping || (m_shouldUndo && m_pendingChanges.Count != 0))
+            if (m_pendingChanges.Count != 0 &&  (m_removeMapping || m_shouldUndo))
             {
                 m_workspace.Value.Undo(m_pendingChanges.ToArray());
             }

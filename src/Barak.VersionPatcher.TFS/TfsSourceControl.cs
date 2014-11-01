@@ -159,6 +159,11 @@ namespace Barak.VersionPatcher.TFS
         {
             try
             {
+                if (!m_workspace.IsValueCreated)
+                {
+                    var invoker = m_workspace.Value;
+                }
+
                 var item = m_versionControlServer.GetItem(
                     System.IO.Path.Combine(m_sourceControlRootPath, path),
                     maxRevisionVersion.GetSpec(),

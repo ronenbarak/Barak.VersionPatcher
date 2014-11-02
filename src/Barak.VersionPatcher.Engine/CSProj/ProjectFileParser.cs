@@ -39,7 +39,7 @@ namespace Barak.VersionPatcher.Engine.CSProj
             {
                 instance.Items = instance.Items.ArrayAdd(new Attribute() {Name = attribute.Name, Value = attribute.Value});
                 var prop = instanceType.GetProperty(attribute.Name);
-                if (prop.PropertyType == typeof(string))
+                if (prop != null && prop.PropertyType == typeof(string))
                 {
                     prop.SetValue(instance, attribute.Value, null);
                 }

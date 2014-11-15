@@ -10,7 +10,7 @@ Support
 
 SourceControl: 
 * Team foundation server(Tested on TFS 2012)
-* Git (Todo)
+* Git (Partially supported, still some bugs)
 
 Sources: 
 * CSharp code only.

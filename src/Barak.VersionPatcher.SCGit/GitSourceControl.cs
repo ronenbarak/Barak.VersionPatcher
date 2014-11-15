@@ -21,6 +21,10 @@ namespace Barak.VersionPatcher.SCGit
             m_userName = userName;
             m_branchPath = branchPath;
             m_fileSystemPath = fileSystemPath;
+            if (!m_fileSystemPath.EndsWith(new string(Path.DirectorySeparatorChar,1)))
+            {
+                m_fileSystemPath = m_fileSystemPath + Path.DirectorySeparatorChar;
+            }
         }
 
         public void Dispose()
@@ -75,7 +79,7 @@ namespace Barak.VersionPatcher.SCGit
 
         public IRevisionVersion GetRevisionOfItem(IRevisionVersion maxRevisionVersion, string path)
         {
-            var relativePath = path.Substring(m_fileSystemPath.Length +1);
+            var relativePath = path.Substring(m_fileSystemPath.Length);
 
             var fileInGit = maxRevisionVersion.GetCommit()[relativePath];
             if (fileInGit == null)
@@ -164,7 +168,7 @@ namespace Barak.VersionPatcher.SCGit
                 {
                     foreach (var path in m_checkoutFiles)
                     {
-                        var relativePath = path.Substring(m_fileSystemPath.Length + 1);
+                        var relativePath = path.Substring(m_fileSystemPath.Length);
 
                         m_repository.Index.Stage(relativePath);
                     }
@@ -186,7 +190,7 @@ namespace Barak.VersionPatcher.SCGit
                         Blob newBlob = m_repository.ObjectDatabase.CreateBlob(ms);
 
                         
-                        var relativePath = filePath.Substring(m_fileSystemPath.Length + 1);
+                        var relativePath = filePath.Substring(m_fileSystemPath.Length);
 
                         var oldFile = td[relativePath];
                         if (oldFile != null)

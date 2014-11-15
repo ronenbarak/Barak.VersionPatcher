@@ -1,0 +1,1 @@
+src\Utilities\Barak.VersionPatcher.exe /vcPath:master /vcUrl:https://github.com/ronenbarak/Barak.VersionPatcher.git /fsPath:%~dp0 /commit:true /recursive:true

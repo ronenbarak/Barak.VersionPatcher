@@ -1,5 +1,5 @@
 ﻿using Barak.VersionPatcher.Engine;
-using Barak.VersionPatcher.Git;
+using Barak.VersionPatcher.SCGit;
 using Barak.VersionPatcher.TFS;
 using CLAP;
 

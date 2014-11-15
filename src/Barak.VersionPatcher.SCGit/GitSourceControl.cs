@@ -153,7 +153,9 @@ namespace Barak.VersionPatcher.SCGit
 
             if (m_bareWorkDirPath == null)
             {
-                m_repository.Index.Stage(path);   
+                var relativePath = path.Substring(m_fileSystemPath.Length + 1);
+
+                m_repository.Index.Stage(relativePath);
             }
         }
 
@@ -180,6 +182,12 @@ namespace Barak.VersionPatcher.SCGit
 
                         
                         var relativePath = filePath.Substring(m_fileSystemPath.Length + 1);
+
+                        var oldFile = td[relativePath];
+                        if (oldFile != null)
+                        {
+                            td.Remove(relativePath);
+                        }
                         td.Add(relativePath, newBlob, Mode.NonExecutableFile);
                     }
 

@@ -49,6 +49,7 @@
     <Compile Include="PatchInfo.cs" />
     <Compile Include="SourceControlProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StringIgnoreCaseEqualityComarer.cs" />
     <Compile Include="VersionPatcher.cs" />
     <Compile Include="VersionPathcerConsts.cs" />
   </ItemGroup>

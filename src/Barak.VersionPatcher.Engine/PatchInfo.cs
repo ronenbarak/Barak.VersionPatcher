@@ -22,5 +22,7 @@ namespace Barak.VersionPatcher.Engine
         public string[] ProjectFiles { get; set; }
         public bool Recursive { get; set; }
         public VersionPart VersionPart { get; set; }
+        public string Username { get; set; }
+        public string Passowrd { get; set; }
     }
 }

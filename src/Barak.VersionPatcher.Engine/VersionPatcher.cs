@@ -32,6 +32,8 @@ namespace Barak.VersionPatcher.Engine
         {
             using (ISourceControl sourceControl = GetSourceControl(patchInfo))
             {
+                sourceControl.Connect(patchInfo.SourceControlUrl);
+
                 var maxRevision = sourceControl.GetRevisionById(patchInfo.Revision);
                 var minRevision = sourceControl.GetRevisionOfItem(maxRevision, System.IO.Path.Combine(patchInfo.FileSystemPath, VersionPathcerConsts.VersionControlFile));
                 IEnumerable<IRevision> revisions = sourceControl.GetRevisions(minRevision, maxRevision);
@@ -39,7 +41,7 @@ namespace Barak.VersionPatcher.Engine
                 {
                     FullPath =
                         System.IO.Path.Combine(patchInfo.FileSystemPath, p.Item),
-                }).ToDictionary(p => p.FullPath.ToUpper());
+                }).ToDictionary(p => p.FullPath,new StringIgnoreCaseEqualityComarer());
 
                 if (revisions.Count() != 0)
                 {
@@ -153,16 +155,16 @@ namespace Barak.VersionPatcher.Engine
 
         private static IEnumerable<string> GetAssemblyInfoFilesToUpdage(IEnumerable<CSProject> changeProjects)
         {
-            HashSet<string> fileToModify = new HashSet<string>();            
+            HashSet<string> fileToModify = new HashSet<string>(new StringIgnoreCaseEqualityComarer());            
             foreach (var changeProject in changeProjects)
             {
-                File foundFile = changeProject.Files.FirstOrDefault(p => p.Path.ToUpper() == @"PROPERTIES\ASSEMBLYINFO.CS");
+                File foundFile = changeProject.Files.FirstOrDefault(p => string.Equals(p.Path,@"PROPERTIES\ASSEMBLYINFO.CS",StringComparison.OrdinalIgnoreCase));
                 if (foundFile != null)
                 {
                     string fullPath =Path.GetFullPath(Path.Combine(Path.GetDirectoryName(changeProject.FullPath), foundFile.Path));
                     if (System.IO.File.Exists(fullPath))
                     {
-                        fileToModify.Add(fullPath.ToUpper());
+                        fileToModify.Add(fullPath);
                     }
                 }
             }
@@ -174,7 +176,7 @@ namespace Barak.VersionPatcher.Engine
         {
             Dictionary<CSProject, List<CSProject>> projectToDependents = allProjects.ToDictionary(p => p,
                 project => new List<CSProject>());
-            Dictionary<string, CSProject> fullPathToProject = allProjects.ToDictionary(p => p.FullPath);
+            Dictionary<string, CSProject> fullPathToProject = allProjects.ToDictionary(p => p.FullPath,new StringIgnoreCaseEqualityComarer());
 
             foreach (var csProject in allProjects)
             {
@@ -184,7 +186,7 @@ namespace Barak.VersionPatcher.Engine
                     {
                         var fullPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(csProject.FullPath), currDependentReferance.Path));
                         CSProject currDependentProject;
-                        if (fullPathToProject.TryGetValue(fullPath.ToUpper(), out currDependentProject))
+                        if (fullPathToProject.TryGetValue(fullPath, out currDependentProject))
                         {
                             List<CSProject> dependetProjects;
                             if (projectToDependents.TryGetValue(currDependentProject, out dependetProjects))
@@ -238,7 +240,7 @@ namespace Barak.VersionPatcher.Engine
                 using (var projectStream = System.IO.File.OpenRead(projectPath))
                 {
                     csProject = ProjectFileTypeToCSProject.Convert(System.IO.Path.GetFileName(projectPath), ProjectFileParser.ParseFile(projectStream));
-                    csProject.FullPath = projectPath.ToUpper();
+                    csProject.FullPath = projectPath;
 
                     // Add self if it has been changed.
                     ChangeFiles changeProject;
@@ -250,7 +252,7 @@ namespace Barak.VersionPatcher.Engine
                     foreach (File currFile in csProject.Files)
                     {
                         ChangeFiles changeFile;
-                        if (changeFiles.TryGetValue(Path.GetFullPath(Path.Combine(projectDir, currFile.Path)).ToUpper(),
+                        if (changeFiles.TryGetValue(Path.GetFullPath(Path.Combine(projectDir, currFile.Path)),
                             out changeFile))
                         {
                             changeFile.Projects.Add(csProject);
@@ -266,7 +268,7 @@ namespace Barak.VersionPatcher.Engine
                         if (!string.IsNullOrEmpty(currReferance.Path))
                         {
                             ChangeFiles changeFile;
-                            if (changeFiles.TryGetValue(Path.GetFullPath(Path.Combine(projectDir, currReferance.Path)).ToUpper(), out changeFile))
+                            if (changeFiles.TryGetValue(Path.GetFullPath(Path.Combine(projectDir, currReferance.Path)), out changeFile))
                             {
                                 changeFile.Projects.Add(csProject);
                             }
@@ -284,8 +286,7 @@ namespace Barak.VersionPatcher.Engine
             ISourceControl sourceControl = null;
             if (patchInfo.ForceVersionControlType != null)
             {
-                sourceControl = sourceControlProvider.GetSourceControlByType(patchInfo.ForceVersionControlType,
-                    patchInfo.VersionControlPath);
+                sourceControl = sourceControlProvider.GetSourceControlByType(patchInfo.ForceVersionControlType, patchInfo.VersionControlPath);
             }
             else
             {
@@ -297,7 +298,6 @@ namespace Barak.VersionPatcher.Engine
                 throw new Exception("Source Control not found");
             }
 
-            sourceControl.Connect(patchInfo.SourceControlUrl);
             return sourceControl;
         }
     }

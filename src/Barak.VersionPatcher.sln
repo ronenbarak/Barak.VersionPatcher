@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Barak.VersionPatcher.Engine
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Barak.VersionPatcher.TFS", "Barak.VersionPatcher.TFS\Barak.VersionPatcher.TFS.csproj", "{821D043E-BE87-4EC6-B42E-283610363B69}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Barak.VersionPatcher.GitSourceControl", "Barak.VersionPatcher.GitSourceControl\Barak.VersionPatcher.GitSourceControl.csproj", "{65F609AA-8B67-481A-8283-A62DFF10A138}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,6 +27,10 @@ Global
 		{821D043E-BE87-4EC6-B42E-283610363B69}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{821D043E-BE87-4EC6-B42E-283610363B69}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{821D043E-BE87-4EC6-B42E-283610363B69}.Release|Any CPU.Build.0 = Release|Any CPU
+		{65F609AA-8B67-481A-8283-A62DFF10A138}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65F609AA-8B67-481A-8283-A62DFF10A138}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{65F609AA-8B67-481A-8283-A62DFF10A138}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65F609AA-8B67-481A-8283-A62DFF10A138}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

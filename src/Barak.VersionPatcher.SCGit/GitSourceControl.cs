@@ -114,7 +114,7 @@ namespace Barak.VersionPatcher.SCGit
                     }
                     else
                     {
-                        return maxRevisionVersion;
+                        return new GitRevisionVersion(prevCommit);
                     }
                     prevCommit = c;
                 }

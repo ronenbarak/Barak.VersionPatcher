@@ -142,39 +142,44 @@ namespace Barak.VersionPatcher.SCGit
             return paths.Select(p => new GitRevision(p)).ToList();
         }
 
-        private List<string> checkoutFiles = new List<string>();
+        private List<string> m_checkoutFiles = new List<string>();
         private bool m_isCompleted;
         private string m_userName;
         private string m_password;
 
         public void Checkout(string path)
         {
-            checkoutFiles.Add(path);
+            m_checkoutFiles.Add(path);
 
             if (m_bareWorkDirPath == null)
             {
-                var relativePath = path.Substring(m_fileSystemPath.Length + 1);
-
-                m_repository.Index.Stage(relativePath);
             }
         }
 
         public void Commit(string comment)
         {
-            if (checkoutFiles.Count != 0)
+            if (m_checkoutFiles.Count != 0)
             {
                 if (m_bareWorkDirPath == null)
                 {
+                    foreach (var path in m_checkoutFiles)
+                    {
+                        var relativePath = path.Substring(m_fileSystemPath.Length + 1);
+
+                        m_repository.Index.Stage(relativePath);
+                    }
+
                     if (m_repository.Index.RetrieveStatus().IsDirty)
                     {
                         m_repository.Commit(comment);
                     }
+                    m_isCompleted = true;
                 }
                 else
                 {
                     TreeDefinition td = TreeDefinition.From(m_branch.Commits.First());
 
-                    foreach (var filePath in checkoutFiles)
+                    foreach (var filePath in m_checkoutFiles)
                     {
                         var contentBytes = System.IO.File.ReadAllBytes(filePath);
                         MemoryStream ms = new MemoryStream(contentBytes);
@@ -206,10 +211,10 @@ namespace Barak.VersionPatcher.SCGit
 
                     // Update the HEAD reference to point to the latest commit
                     m_repository.Refs.UpdateTarget(m_repository.Refs.Head, commit.Id);
-                }
 
-                m_isCompleted = true;
-                Push();
+                    m_isCompleted = true;
+                    Push();
+                }
             }
         }
 
@@ -253,7 +258,7 @@ namespace Barak.VersionPatcher.SCGit
                 if (!m_isCompleted)
                 {
                     // rollback all checkout files
-                    foreach (var checkoutFile in checkoutFiles)
+                    foreach (var checkoutFile in m_checkoutFiles)
                     {
                         m_repository.Index.Unstage(checkoutFile);      
                     }

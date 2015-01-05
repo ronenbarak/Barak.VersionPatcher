@@ -51,12 +51,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\Lib\CLAP.dll">
-      <Link>Lib\CLAP.dll</Link>
-    </Content>
-    <Content Include="..\Lib\Costura.dll">
-      <Link>Lib\Costura.dll</Link>
-    </Content>
     <Content Include="FodyWeavers.xml" />
     <EmbeddedResource Include="costura64\git2-69db893.dll" />
   </ItemGroup>

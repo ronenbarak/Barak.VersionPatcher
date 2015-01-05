@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Weavers>
+  <Costura IncludeDebugSymbols="false" DisableCompression="false">
+    <IncludeAssemblies>
+      Barak.VersionPatcher.Engine
+      Barak.VersionPatcher.SCGit
+      Barak.VersionPatcher.TFS
+      CLAP
+      LibGit2Sharp
+    </IncludeAssemblies>
+    <Unmanaged64Assemblies>
+      git2-69db893.dll
+    </Unmanaged64Assemblies>
+  </Costura>
+  
+</Weavers>

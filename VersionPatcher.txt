@@ -1,5 +1,2 @@
-1/5/2015 10:53:06 PM
-C:\Git\Barak.VersionPatcher\src\Barak.VersionPatcher.Engine\Properties\AssemblyInfo.cs
+1/5/2015 11:07:04 PM
 C:\Git\Barak.VersionPatcher\src\Barak.VersionPatcher.Cmd\Properties\AssemblyInfo.cs
-C:\Git\Barak.VersionPatcher\src\Barak.VersionPatcher.SCGit\Properties\AssemblyInfo.cs
-C:\Git\Barak.VersionPatcher\src\Barak.VersionPatcher.TFS\Properties\AssemblyInfo.cs

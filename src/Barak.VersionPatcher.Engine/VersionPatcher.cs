@@ -251,12 +251,19 @@ namespace Barak.VersionPatcher.Engine
 
                     foreach (File currFile in csProject.Files)
                     {
+                      try
+                      {
+                        var fullpath = Path.GetFullPath(Path.Combine(projectDir, currFile.Path));
                         ChangeFiles changeFile;
-                        if (changeFiles.TryGetValue(Path.GetFullPath(Path.Combine(projectDir, currFile.Path)),
-                            out changeFile))
+                        if (changeFiles.TryGetValue(fullpath,out changeFile))
                         {
-                            changeFile.Projects.Add(csProject);
+                          changeFile.Projects.Add(csProject);
                         }
+                      }
+                      catch (Exception)
+                      {
+                        // Some times the path generation is failing it is ok, it is just unsupported format
+                      }
                     }
 
                     // Q: What happends When the referance is full and not relative?
